@@ -1,15 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"slices"
+
+	"github.com/ymiseddy/AdventOfCode2024/shared"
+
 	"strconv"
 	"strings"
 )
 
-var title string = "Advent of Code 2024, Day 2, Puzzle 1"
+var title string = "Advent of Code 2024, Day 2"
 
 func fieldsAsInts(line string) []int64 {
 	fields := strings.Fields(line)
@@ -24,14 +26,10 @@ func fieldsAsInts(line string) []int64 {
 	return ints
 }
 
-func puzzle1(file *os.File) int64 {
-	scanner := bufio.NewScanner(file)
+func puzzle1(values [][]int64) int64 {
 	safe := int64(0)
 outer:
-	for scanner.Scan() {
-		// Scan and parse the values from the line
-		line := scanner.Text()
-		fields := fieldsAsInts(line)
+	for _, fields := range values {
 		originalDir := int64(0)
 		for n, field := range fields {
 			if n == 0 {
@@ -40,7 +38,6 @@ outer:
 			delta := fields[n-1] - field
 			absDelta := max(delta, -delta)
 			if delta == 0 {
-				fmt.Println(fields, "zero")
 				continue outer
 			}
 			dir := delta / absDelta
@@ -48,17 +45,14 @@ outer:
 				originalDir = dir
 			}
 			if dir != originalDir {
-				fmt.Println(fields, "direction change")
 				continue outer
 			}
 
 			if absDelta < 1 || absDelta > 3 {
-				fmt.Println(fields, "unsafe - out of range")
 				continue outer
 			}
 		}
 		safe += 1
-		fmt.Println(fields, "safe")
 	}
 
 	// Iterate ofer the left list
@@ -78,53 +72,61 @@ func checkField(dir int64, prev int64, curr int64) (bool, int64) {
 	return true, newDir
 }
 
-func checkFields(fields []int64) bool {
-	originalDir := int64(0)
-	for n, field := range fields {
-		if n == 0 {
-			continue
-		}
-		delta := fields[n-1] - field
-		absDelta := max(delta, -delta)
-		if delta == 0 {
-			return false
-		}
-		dir := delta / absDelta
-		if originalDir == 0 {
-			originalDir = dir
-		}
-		if dir != originalDir {
-			return false
-		}
+func checkFields(fields []int64, direction int64, missed bool) bool {
 
-		if absDelta < 1 || absDelta > 3 {
-			return false
+	// Recursive solution
+
+	// Base case - we only have one element, we're done.
+	if len(fields) == 1 {
+		return true
+	}
+
+	// Compute difference and direction.
+	delta := fields[1] - fields[0]
+	absDelta := max(delta, -delta)
+	var newDirection int64 = 0
+	if absDelta > 0 {
+		newDirection = delta / absDelta
+	}
+
+	// Check constraints.
+	if absDelta > 0 && absDelta < 4 &&
+		(direction == 0 || direction == newDirection) {
+
+		// Check forward.
+		if checkFields(fields[1:], newDirection, missed) {
+			return true
 		}
 	}
-	return true
+
+	// If we have previously missed, we can't re-check.
+	if missed {
+		return false
+	}
+
+	// When directon is 0, we are the first element.
+	// Check moving forward without the current element and invariant direction.
+	if direction == 0 && checkFields(fields[1:], 0, true) {
+		res := checkFields(fields[1:], direction, true)
+		return res
+	}
+
+	// Check without the next element.
+	if checkFields(slices.Concat(fields[:1], fields[2:]), direction, true) {
+		return true
+	}
+
+	return false
 }
 
-func puzzle2(file *os.File) int64 {
+func puzzle2(values [][]int64) int64 {
 	number := 0
-	scanner := bufio.NewScanner(file)
 	safe := int64(0)
-	for scanner.Scan() {
+	for _, fields := range values {
 		number++
-		// Scan and parse the values from the line
-		line := scanner.Text()
-		fields := fieldsAsInts(line)
-		if checkFields(fields) {
+		if checkFields(fields, 0, false) {
 			safe++
 			continue
-		}
-		for n := 0; n < len(fields); n++ {
-			newFields := slices.Concat(fields[:n], fields[n+1:])
-
-			if checkFields(newFields) {
-				fmt.Println("Safe after removing", n)
-				safe++
-				break
-			}
 		}
 	}
 
@@ -133,18 +135,13 @@ func puzzle2(file *os.File) int64 {
 }
 
 func main() {
-	//x := []int{20, 21, 24, 25, 27, 29, 27}
-	// n := 2
-	// fmt.Println(append(x[:n], x[n+1:]...))
-	/*
-		for n := 0; n < len(x); n++ {
-			b := slices.Concat(x[:n], x[n+1:])
-			fmt.Println(n, n+1, b)
-		}
-	*/
-
+	values, err := shared.ReadIntsFromStream(os.Stdin)
+	if err != nil {
+		panic(err)
+	}
 	fmt.Println(title)
-	code := puzzle2(os.Stdin)
-	fmt.Printf("Result: %d\n", code)
-
+	result1 := puzzle1(values)
+	fmt.Printf("Puzzle 1 result: %d\n", result1)
+	result2 := puzzle2(values)
+	fmt.Printf("Puzzle 2 result: %d\n", result2)
 }

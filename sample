@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+# Get the day from the first argument
+DAY=$1
+
+# Left pad with zeros to make sure we have two digits
+if [ $DAY -lt 10 ]; then
+    DAY="0$DAY"
+fi
+
+DAY_DIR=Day$DAY
+
+go run $DAY_DIR/main.go < $DAY_DIR/sample.txt

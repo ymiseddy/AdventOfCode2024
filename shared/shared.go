@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+func ReadLinesFromStream(file *os.File) []string {
+	scanner := bufio.NewScanner(file)
+	var lines []string
+	for scanner.Scan() {
+		line := scanner.Text()
+		lines = append(lines, line)
+	}
+	return lines
+}
+
 func ReadIntsFromFile(fileName string) ([][]int64, error) {
 	file, err := os.Open(fileName)
 	if err != nil {

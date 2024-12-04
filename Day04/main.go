@@ -10,198 +10,61 @@ var title string = "Advent of Code 2024, Day 4"
 var xmasSearch string = "XMAS"
 var masSearch string = "MAS"
 
-func plotMapForward(x int, y int, charmap [][]rune, searchString string) {
+func plotMap(x int, y int, dx int, dy int, charmap [][]rune, searchString string) {
 	for i := 0; i < len(searchString); i++ {
-		charmap[y][x+i] = rune(searchString[i])
+		charmap[y+i*dy][x+i*dx] = rune(searchString[i])
 	}
 }
 
-func plotMapBackward(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y][x-i] = rune(searchString[i])
+var curryPlotMap = func(dx int, dy int) func(x int, y int, charmap [][]rune, searchString string) {
+	return func(x int, y int, charmap [][]rune, searchString string) {
+		plotMap(x, y, dx, dy, charmap, searchString)
 	}
 }
 
-func plotMapUp(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y-i][x] = rune(searchString[i])
-	}
-}
+var plotMapForward = curryPlotMap(1, 0)
+var plotMapBackward = curryPlotMap(-1, 0)
+var plotMapUp = curryPlotMap(0, -1)
+var plotMapDown = curryPlotMap(0, 1)
+var plotDiagonalDownRight = curryPlotMap(1, 1)
+var plotDiagonalDownLeft = curryPlotMap(-1, 1)
+var plotDiagonalUpRight = curryPlotMap(1, -1)
+var plotDiagonalUpLeft = curryPlotMap(-1, -1)
 
-func plotMapDown(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y+i][x] = rune(searchString[i])
-	}
-}
-
-func plotDiagonalDownRight(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y+i][x+i] = rune(searchString[i])
-	}
-}
-
-func plotDiagonalDownLeft(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y+i][x-i] = rune(searchString[i])
-	}
-}
-
-func plotDiagonalUpRight(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y-i][x+i] = rune(searchString[i])
-	}
-}
-
-func plotDiagonalUpLeft(x int, y int, charmap [][]rune, searchString string) {
-	for i := 0; i < len(searchString); i++ {
-		charmap[y-i][x-i] = rune(searchString[i])
-	}
-}
-
-func searchForward(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	booFound := false
-	if y == 10 && x == 6 {
-		fmt.Println("Found it!")
-		booFound = true
-	}
-
-	if x+len(searchString) > len(lines[y]) {
-		if booFound {
-			fmt.Println("Past the end.")
-		}
+func search(x, y, dx, dy int, lines []string, searchString string) bool {
+	xFinal := x + len(searchString)*dx
+	yFinal := y + len(searchString)*dy
+	if xFinal > len(lines[y]) ||
+		yFinal > len(lines) ||
+		xFinal < -1 ||
+		yFinal < -1 {
 		return false
 	}
 
 	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y][x+i])
-		if lines[y][i+x] != searchString[i] {
-			return false
-		}
-	}
-	//fmt.Println("Forward: ", tack)
-	return true
-}
-
-func searchBackward(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if x-len(searchString)+1 < 0 {
-		return false
-	}
-
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y][x-i])
-		if lines[y][x-i] != searchString[i] {
-			return false
-		}
-	}
-	//fmt.Println("Backward: ", tack)
-	return true
-}
-
-func searchUp(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y-len(searchString)+1 < 0 {
-		return false
-	}
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y-i][x])
-		if lines[y-i][x] != searchString[i] {
-			return false
-		}
-	}
-
-	//fmt.Println("Up: ", tack)
-	return true
-}
-
-func searchDown(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y+len(searchString) > len(lines) {
-		return false
-	}
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y+i][x])
-		if lines[y+i][x] != searchString[i] {
-			return false
-		}
-	}
-	//fmt.Println("Down: ", tack)
-	return true
-}
-
-func searchDiagonalDownRight(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y+len(searchString) > len(lines) {
-		return false
-	}
-	if x+len(searchString) > len(lines[y]) {
-		return false
-	}
-
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y+i][x+i])
-		if lines[y+i][x+i] != searchString[i] {
-			return false
-		}
-	}
-	//fmt.Println("Diagonal Down Right: ", tack)
-	return true
-}
-
-func searchDiagonalDownLeft(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y+len(searchString) > len(lines) {
-		return false
-	}
-	if x-len(searchString)+1 < 0 {
-		return false
-	}
-
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y+i][x-i])
-		if lines[y+i][x-i] != searchString[i] {
+		sx := x + dx*i
+		sy := y + dy*i
+		if lines[sy][sx] != searchString[i] {
 			return false
 		}
 	}
 	return true
 }
 
-func searchDiagonalUpRight(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y-len(searchString)+1 < 0 {
-		return false
+func currySearch(dx int, dy int) func(x, y int, lines []string, searchString string) bool {
+	return func(x, y int, lines []string, searchString string) bool {
+		return search(x, y, dx, dy, lines, searchString)
 	}
-	if x+len(searchString) > len(lines[y]) {
-		return false
-	}
-
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y-i][x+i])
-		if lines[y-i][x+i] != searchString[i] {
-			return false
-		}
-	}
-	return true
 }
 
-func searchDiagonalUpLeft(x, y int, lines []string, searchString string) bool {
-	tack := ""
-	if y-len(searchString)+1 < 0 {
-		return false
-	}
-	if x-len(searchString)+1 < 0 {
-		return false
-	}
-
-	for i := 0; i < len(searchString); i++ {
-		tack += string(lines[y-i][x-i])
-		if lines[y-i][x-i] != searchString[i] {
-			return false
-		}
-	}
-	return true
-}
+var searchForward = currySearch(1, 0)
+var searchBackward = currySearch(-1, 0)
+var searchUp = currySearch(0, -1)
+var searchDown = currySearch(0, 1)
+var searchDiagonalDownRight = currySearch(1, 1)
+var searchDiagonalDownLeft = currySearch(-1, 1)
+var searchDiagonalUpRight = currySearch(1, -1)
+var searchDiagonalUpLeft = currySearch(-1, -1)
 
 func Puzzle1(lines []string) int64 {
 	total := int64(0)
@@ -260,14 +123,16 @@ func Puzzle1(lines []string) int64 {
 			}
 		}
 	}
-	/*
-		fmt.Println()
-		for y := 0; y < len(charmap); y++ {
-			fmt.Println(string(charmap[y]))
-		}
-		fmt.Println()
-	*/
+	// drawPlot(charmap)
 	return total
+}
+
+func drawPlot(charmap [][]rune) {
+	fmt.Println()
+	for y := 0; y < len(charmap); y++ {
+		fmt.Println(string(charmap[y]))
+	}
+	fmt.Println()
 }
 
 func Puzzle2(lines []string) int64 {
@@ -319,13 +184,7 @@ func Puzzle2(lines []string) int64 {
 			}
 		}
 	}
-	/*
-		fmt.Println()
-		for y := 0; y < len(charmap); y++ {
-			fmt.Println(string(charmap[y]))
-		}
-		fmt.Println()
-	*/
+	//drawPlot(charmap)
 	return total
 }
 

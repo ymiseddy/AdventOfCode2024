@@ -146,17 +146,17 @@ func Puzzle2(lines []string) int64 {
 		orderedByRules := []int64{}
 		seenSet = make(map[int64]struct{})
 		for {
-			// Find the first value that is not in seenSet
 			var value int64 = -1
-			for _, i := range arr {
-				if _, ok := seenSet[i]; !ok {
-					value = i
-					continue
-				}
-			}
-			if value == -1 {
+			// Find the first value in valueSet (there must be a better way)
+			if len(valueSet) == 0 {
 				break
 			}
+
+			for k, _ := range valueSet {
+				value = k
+				break
+			}
+
 			for {
 				swapped := false
 				// What must come before value

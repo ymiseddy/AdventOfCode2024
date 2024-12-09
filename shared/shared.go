@@ -25,6 +25,14 @@ func ReadIntsFromFile(fileName string) ([][]int64, error) {
 	return ReadIntsFromStream(file)
 }
 
+func ConvertStringToInts(source []string) []int64 {
+	result := make([]int64, len(source))
+	for i, s := range source {
+		result[i], _ = strconv.ParseInt(s, 10, 64)
+	}
+	return result
+}
+
 func ReadIntsFromStream(file *os.File) ([][]int64, error) {
 	scanner := bufio.NewScanner(file)
 	var lines [][]int64

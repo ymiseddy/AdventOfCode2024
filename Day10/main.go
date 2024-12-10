@@ -30,7 +30,7 @@ func Map(lines []string, value int, pathX, pathY int) (PointSet, int) {
 		return set, 1
 	}
 	pointSet := PointSet{}
-	raiting := int(0)
+	rating := int(0)
 	for _, dir := range cardinalDirections {
 		x := pathX + dir[0]
 		y := pathY + dir[1]
@@ -47,15 +47,15 @@ func Map(lines []string, value int, pathX, pathY int) (PointSet, int) {
 		}
 		// fmt.Printf("Invalid value at (%d, %d): %c\n", x, y, lines[x][y])
 		if val == value+1 {
-			newPoints, subRaiting := Map(lines, value+1, x, y)
-			raiting += subRaiting
+			newPoints, subRating := Map(lines, value+1, x, y)
+			rating += subRating
 			for point := range newPoints {
 				pointSet[point] = struct{}{}
 			}
 		} else {
 		}
 	}
-	return pointSet, raiting
+	return pointSet, rating
 }
 
 func Puzzle1(lines []string) int64 {
@@ -78,9 +78,9 @@ func Puzzle2(lines []string) int64 {
 	for y, line := range lines {
 		for x, char := range line {
 			if char == '0' {
-				_, raiting := Map(lines, 0, x, y)
+				_, rating := Map(lines, 0, x, y)
 				// fmt.Printf("Point set at (%d, %d): %v\n", x, y, raiting)
-				score += int64(raiting)
+				score += int64(rating)
 			}
 		}
 	}

@@ -24,12 +24,16 @@ type cacheResult struct {
 // Cache previously calculated stone/depth combinations otherwise we will
 // be here for a long time.
 var stoneMap map[cacheResult]int64 = make(map[cacheResult]int64)
+var cacheMisses int64 = 0
+var cacheHits int64 = 0
 
 func BlinkStone(stone int64, blinks int) int64 {
 	point := cacheResult{stone, blinks}
 	if val, ok := stoneMap[point]; ok {
+		cacheHits++
 		return val
 	}
+	cacheMisses++
 
 	if blinks == 0 {
 		stoneMap[point] = 1
@@ -95,4 +99,6 @@ func main() {
 	fmt.Println("Puzzle 1 result: ", res1)
 	res2 := Puzzle2(lines)
 	fmt.Println("Puzzle 2 result: ", res2)
+	fmt.Println("Cache misses: ", cacheMisses)
+	fmt.Println("Cache hits: ", cacheHits)
 }

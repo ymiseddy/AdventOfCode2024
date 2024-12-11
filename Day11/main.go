@@ -21,6 +21,8 @@ type cacheResult struct {
 	depth int
 }
 
+// Cache previously calculated stone/depth combinations otherwise we will
+// be here for a long time.
 var stoneMap map[cacheResult]int64 = make(map[cacheResult]int64)
 
 func BlinkStone(stone int64, blinks int) int64 {

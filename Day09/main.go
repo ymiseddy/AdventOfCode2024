@@ -62,7 +62,6 @@ func Puzzle1(lines []string) int64 {
 		}
 		expansion[idxA] = expansion[idxB]
 		expansion[idxB] = -1
-		// Display(expansion)
 		idxA++
 		idxB--
 	}

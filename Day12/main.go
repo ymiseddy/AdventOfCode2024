@@ -131,6 +131,10 @@ func showMap(runeArray [][]rune, cx, cy int) {
 }
 
 func scanPlotArea2(runeArray [][]rune, x, y int) (int64, int64, rune) {
+	// Leaving in a bunch of debug code.
+	// Realization for this puzzle: The number of sides == the number of corners.
+	// Source: Some Guy (Probably Euler)
+
 	plotType := runeArray[y][x]
 	plotTypeVisited := 100 + plotType
 	var fencePlot [][]rune = [][]rune{

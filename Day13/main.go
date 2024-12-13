@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/ymiseddy/AdventOfCode2024/shared"
+	"gonum.org/v1/gonum/mat"
 )
 
 var title string = "Advent of Code 2024, Day 13"
@@ -104,11 +105,51 @@ func FindMinPrize(puzzleInput PuzzleInput) (int64, []int) {
 	return 0, []int{0, 0}
 }
 
+func CheckInteger(x float64, tol float64) bool {
+	return math.Abs(math.Floor(x)-x) < tol
+}
+
+func FindMinPrizeGonum(puzzleInput PuzzleInput) (int64, []int) {
+	aCost := 3
+	bCost := 1
+
+	matCoefficients := mat.NewDense(2, 2, []float64{
+		float64(puzzleInput.ButtonA[0]), float64(puzzleInput.ButtonB[0]),
+		float64(puzzleInput.ButtonA[1]), float64(puzzleInput.ButtonB[1]),
+	})
+	matPrize := mat.NewVecDense(2,
+		[]float64{
+			float64(puzzleInput.Prize[0]),
+			float64(puzzleInput.Prize[1]),
+		})
+	var x mat.VecDense
+	x.SolveVec(matCoefficients, matPrize)
+
+	// Added custom CheckInteger with tolerance since gonum's
+	// SolveVec can return values close to integers, but not quite.
+	if !CheckInteger(x.At(0, 0), .00001) || !CheckInteger(x.At(1, 0), .00001) {
+		return 0, []int{0, 0}
+	}
+
+	cost := int64(aCost*int(x.At(0, 0)) + bCost*int(x.At(1, 0)))
+	return cost, []int{int(x.At(0, 0)), int(x.At(1, 0))}
+}
+
 func Puzzle1(lines []string) int64 {
 	var total int64 = 0
 	puzzleInputs := ReadInputs(lines)
 	for _, puzzleInput := range puzzleInputs {
 		cost, _ := FindMinPrize(puzzleInput)
+		total += cost
+	}
+	return total
+}
+
+func Puzzle1Gonum(lines []string) int64 {
+	var total int64 = 0
+	puzzleInputs := ReadInputs(lines)
+	for _, puzzleInput := range puzzleInputs {
+		cost, _ := FindMinPrizeGonum(puzzleInput)
 		total += cost
 	}
 	return total
@@ -126,12 +167,28 @@ func Puzzle2(lines []string) int64 {
 	return total
 }
 
+func Puzzle2Gonum(lines []string) int64 {
+	var total int64 = 0
+	puzzleInputs := ReadInputs(lines)
+	for _, puzzleInput := range puzzleInputs {
+		puzzleInput.Prize[0] = 10000000000000 + puzzleInput.Prize[0]
+		puzzleInput.Prize[1] = 10000000000000 + puzzleInput.Prize[1]
+		cost, _ := FindMinPrizeGonum(puzzleInput)
+		total += cost
+	}
+	return total
+}
+
 func main() {
 	fmt.Println(title)
 	// Read all text from stdin
 	lines := shared.ReadLinesFromStream(os.Stdin)
 	res1 := Puzzle1(lines)
 	fmt.Println("Puzzle 1 result: ", res1)
+	res1a := Puzzle1Gonum(lines)
+	fmt.Println("Puzzle 1 (gonum) result: ", res1a)
 	res2 := Puzzle2(lines)
 	fmt.Println("Puzzle 2 result: ", res2)
+	res2a := Puzzle2Gonum(lines)
+	fmt.Println("Puzzle 2 (gonum) result: ", res2a)
 }

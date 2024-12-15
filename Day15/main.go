@@ -10,7 +10,7 @@ import (
 
 var title string = "Advent of Code 2024, Day 15"
 
-func readGrid(lines []string) ([][]rune, string) {
+func ReadGrid(lines []string) ([][]rune, string) {
 	var grid [][]rune
 	for l, line := range lines {
 		if line == "" {
@@ -23,7 +23,7 @@ func readGrid(lines []string) ([][]rune, string) {
 	return nil, ""
 }
 
-func readGridWide(lines []string) ([][]rune, string) {
+func ReadGridWide(lines []string) ([][]rune, string) {
 	var grid [][]rune
 	for l, line := range lines {
 		if line == "" {
@@ -56,7 +56,7 @@ func readGridWide(lines []string) ([][]rune, string) {
 	return nil, ""
 }
 
-var cardinalDirectionsMap = map[rune][]int{
+var CardinalDirectionsMap = map[rune][]int{
 	'^': {0, -1},
 	'v': {0, 1},
 	'>': {1, 0},
@@ -64,18 +64,6 @@ var cardinalDirectionsMap = map[rune][]int{
 }
 
 var debug = false
-
-func showGrid(grid [][]rune) {
-	if !debug {
-		return
-	}
-	for _, row := range grid {
-		for _, cell := range row {
-			fmt.Print(string(cell))
-		}
-		fmt.Println()
-	}
-}
 
 func findBot(grid [][]rune) (int, int) {
 	for y, row := range grid {
@@ -101,19 +89,15 @@ func computeBoxCost(grid [][]rune) int64 {
 }
 
 func maybeMove(move rune, grid [][]rune, botX, botY int) (int, int, bool) {
-	dir := cardinalDirectionsMap[move]
-	fmt.Printf("Moving %c %d, %d dir=%v\n", move, botX, botY, dir)
+	dir := CardinalDirectionsMap[move]
 	item := grid[botY][botX]
 	newX := botX + dir[0]
 	newY := botY + dir[1]
 	newC := grid[newY][newX]
-	fmt.Printf("%c\n", newC)
 	if newC == '@' {
-		fmt.Printf("Hit bot at %d, %d\n", newX, newY)
 		panic("This shouldn't happen")
 	}
 	if newC == '#' {
-		fmt.Println("Hit wall")
 		return botX, botY, false
 	} else if newC == 'O' {
 		_, _, res := maybeMove(move, grid, newX, newY)
@@ -128,29 +112,26 @@ func maybeMove(move rune, grid [][]rune, botX, botY int) (int, int, bool) {
 
 func Puzzle1(lines []string) int64 {
 	var total int64 = 0
-	grid, moves := readGrid(lines)
+	grid, moves := ReadGrid(lines)
 	if grid == nil {
 		panic("Invalid input")
 	}
 
-	fmt.Println(moves)
 	botX, botY := findBot(grid)
 	if botX == -1 || botY == -1 {
 		panic("Bot not found")
 	}
-	fmt.Println("Bot found at", botX, botY)
 	for _, move := range moves {
 		botX, botY, _ = maybeMove(move, grid, botX, botY)
-		fmt.Println()
 	}
 
-	showGrid(grid)
+	shared.MaybeShowGrid(grid, debug)
 	total = computeBoxCost(grid)
 	return total
 }
 
 func canMove(move rune, grid [][]rune, botX, botY int) bool {
-	dir := cardinalDirectionsMap[move]
+	dir := CardinalDirectionsMap[move]
 	newX := botX + dir[0]
 	newY := botY + dir[1]
 	newC := grid[newY][newX]
@@ -166,6 +147,7 @@ func canMove(move rune, grid [][]rune, botX, botY int) bool {
 		}
 	}
 
+	// Special case for moving up or down since boxes are twice as wide
 	if move == '^' || move == 'v' {
 		if newC == '.' {
 			return true
@@ -173,6 +155,8 @@ func canMove(move rune, grid [][]rune, botX, botY int) bool {
 		if newC == '#' {
 			return false
 		}
+
+		// Ensure both sides of the box are open and subesequent boxes as well.
 		if newC == '[' {
 			return canMove(move, grid, newX, newY) && canMove(move, grid, newX+1, newY)
 		}
@@ -185,15 +169,21 @@ func canMove(move rune, grid [][]rune, botX, botY int) bool {
 }
 
 func makeMove(move rune, grid [][]rune, botX, botY int) (int, int) {
-	dir := cardinalDirectionsMap[move]
+
+	// Presumabley, we have already checked that the move is valid
+	dir := CardinalDirectionsMap[move]
 	item := grid[botY][botX]
 	newX := botX + dir[0]
 	newY := botY + dir[1]
 	newC := grid[newY][newX]
+
+	// Left and right moves just push the item to the new cell when possible.
 	if move == '<' || move == '>' {
 		if newC == '.' {
 			grid[newY][newX] = item
 		}
+
+		// Recursively push the item
 		if newC == '[' || newC == ']' {
 			makeMove(move, grid, newX, newY)
 		}
@@ -202,6 +192,8 @@ func makeMove(move rune, grid [][]rune, botX, botY int) (int, int) {
 		if newC == '.' {
 			grid[newY][newX] = item
 		}
+
+		// Recursively push both sides of the box.
 		if newC == '[' {
 			makeMove(move, grid, newX, newY)
 			makeMove(move, grid, newX+1, newY)
@@ -211,6 +203,7 @@ func makeMove(move rune, grid [][]rune, botX, botY int) (int, int) {
 			makeMove(move, grid, newX-1, newY)
 		}
 	}
+	// Don't forget to update our current position
 	grid[botY][botX] = '.'
 	grid[newY][newX] = item
 	return newX, newY
@@ -218,26 +211,23 @@ func makeMove(move rune, grid [][]rune, botX, botY int) (int, int) {
 
 func Puzzle2(lines []string) int64 {
 	var total int64 = 0
-	grid, moves := readGridWide(lines)
+	grid, moves := ReadGridWide(lines)
 	if grid == nil {
 		panic("Invalid input")
 	}
-	showGrid(grid)
-	fmt.Println(moves)
+	shared.MaybeShowGrid(grid, debug)
 	botX, botY := findBot(grid)
 	if botX == -1 || botY == -1 {
 		panic("Bot not found")
 	}
-	fmt.Println("Bot found at", botX, botY)
 	for _, move := range moves {
 		if canMove(move, grid, botX, botY) {
 			botX, botY = makeMove(move, grid, botX, botY)
 		}
-		showGrid(grid)
-		fmt.Println()
+		shared.MaybeShowGrid(grid, debug)
 	}
 
-	showGrid(grid)
+	shared.MaybeShowGrid(grid, debug)
 	total = computeBoxCost(grid)
 	return total
 }

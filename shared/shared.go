@@ -2,10 +2,23 @@ package shared
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
+
+func MaybeShowGrid(grid [][]rune, debug bool) {
+	if !debug {
+		return
+	}
+	for _, row := range grid {
+		for _, cell := range row {
+			fmt.Print(string(cell))
+		}
+		fmt.Println()
+	}
+}
 
 func ReadLinesFromStream(file *os.File) []string {
 	scanner := bufio.NewScanner(file)

@@ -1,2 +1,6 @@
+github.com/ymiseddy/go_tools/algorithms v0.0.0-20241021225015-2e034fa11f09 h1:uD54Q9HF8nOG8QcVViH0TR6fd9WNeJ0x+hY9xgxXxfU=
+github.com/ymiseddy/go_tools/algorithms v0.0.0-20241021225015-2e034fa11f09/go.mod h1:nNYSX4y+M+vu3szGUh9Oz5LVsnG4IUvmGUQ8Yosv41o=
+golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c h1:7dEasQXItcW1xKJ2+gg5VOiBnqWrJc+rq0DPKyvvdbY=
+golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c/go.mod h1:NQtJDoLvd6faHhE7m4T/1IY708gDefGGjR/iUW8yQQ8=
 gonum.org/v1/gonum v0.15.1 h1:FNy7N6OUZVUaWG9pTiD+jlhdQ3lMP+/LcTpJ6+a8sQ0=
 gonum.org/v1/gonum v0.15.1/go.mod h1:eZTZuRFrzu5pcyjN5wJhcIhnUdNijYxX1T2IcrOGY0o=

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ymiseddy/AdventOfCode2024/priorityqueue"
 	"os"
 	"strconv"
 	"strings"
@@ -119,7 +120,7 @@ func Puzzle1(lines []string) int {
 		grid[rock.y][rock.x] = '#'
 	}
 
-	path := BFSPath(grid)
+	path := AStarPath(grid)
 	for _, step := range path {
 		grid[step.y][step.x] = 'O'
 	}
@@ -140,6 +141,64 @@ func adjacentPath(position coord, grid [][]rune) []coord {
 		}
 	}
 	return result
+}
+
+func absInt(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func cost(position coord, step int, exit coord) int {
+	// Manhattan distance
+	distance := absInt(position.x-exit.x) + absInt(position.y-exit.y)
+	return step + distance
+}
+
+func AStarPath(grid [][]rune) []coord {
+	position := coord{0, 0}
+	exit := coord{len(grid[0]) - 1, len(grid) - 1}
+	queue := priorityqueue.New[coord]()
+	stepMap := make(map[coord]int)
+	stepMap[position] = 0
+	queue.PushItem(position, cost(position, 0, exit))
+
+	visited := make(map[coord]struct{})
+	parent := make(map[coord]coord)
+	parent[position] = coord{-1, -1}
+
+	for queue.Len() > 0 {
+		position := queue.PopItem()
+		step := stepMap[position]
+		ShowGridStep(grid, position)
+		adjacentPositions := adjacentPath(position, grid)
+		for _, adjacentPosition := range adjacentPositions {
+			if adjacentPosition.x == len(grid[0])-1 && adjacentPosition.y == len(grid)-1 {
+				// Reconstruct path.
+				path := make([]coord, 0, 1024)
+				path = append(path, adjacentPosition)
+				for p := position; p.x != 0 || p.y != 0; p = parent[p] {
+					path = append(path, p)
+				}
+				return path
+			}
+			if _, ok := visited[adjacentPosition]; ok {
+				if queue.Contains(adjacentPosition) {
+					cost := cost(adjacentPosition, step+1, exit)
+					queue.UpdateGreaterItemPriority(adjacentPosition, cost)
+					stepMap[adjacentPosition] = step + 1
+				}
+				continue
+			}
+			parent[adjacentPosition] = position
+			adjacentCost := cost(adjacentPosition, step+1, exit)
+			queue.PushItem(adjacentPosition, adjacentCost)
+			visited[adjacentPosition] = struct{}{}
+		}
+	}
+
+	return []coord{}
 }
 
 func BFSPath(grid [][]rune) []coord {
@@ -197,7 +256,7 @@ func Puzzle2(lines []string) coord {
 	for _, rock := range data[:simSteps] {
 		grid[rock.y][rock.x] = '#'
 	}
-	path := BFSPath(grid)
+	path := AStarPath(grid)
 	for _, rock := range data[simSteps:] {
 
 		grid[rock.y][rock.x] = '#'
@@ -214,7 +273,7 @@ func Puzzle2(lines []string) coord {
 		if !recomputePath {
 			continue
 		}
-		path = BFSPath(grid)
+		path = AStarPath(grid)
 		if len(path) == 0 {
 			return rock
 		}

@@ -5,20 +5,21 @@ import (
 )
 
 // Item represents an element in the priority queue.
-type Item[T any] struct {
+type Item[T comparable] struct {
 	Value    T
 	Priority int
 	Index    int // The index of the item in the heap.
 }
 
 // PriorityQueue implements a generic priority queue.
-type PriorityQueue[T any] struct {
+type PriorityQueue[T comparable] struct {
 	elements []*Item[T]
+	items    map[T]*Item[T]
 }
 
 // New creates a new PriorityQueue.
-func New[T any]() *PriorityQueue[T] {
-	return &PriorityQueue[T]{elements: []*Item[T]{}}
+func New[T comparable]() *PriorityQueue[T] {
+	return &PriorityQueue[T]{elements: []*Item[T]{}, items: make(map[T]*Item[T])}
 }
 
 // Len returns the number of elements in the queue.
@@ -53,6 +54,7 @@ func (pq *PriorityQueue[T]) Pop() any {
 	item := old[n-1]
 	item.Index = -1 // Mark as removed.
 	pq.elements = old[0 : n-1]
+	delete(pq.items, item.Value)
 	return item
 }
 
@@ -63,10 +65,37 @@ func (pq *PriorityQueue[T]) Update(item *Item[T], value T, priority int) {
 	heap.Fix(pq, item.Index)
 }
 
+func (pq *PriorityQueue[T]) Contains(value T) bool {
+	_, ok := pq.items[value]
+	return ok
+}
+
+func (pq *PriorityQueue[T]) UpdateItem(value T, priority int) {
+	item, ok := pq.items[value]
+	if !ok {
+		return
+	}
+	item.Priority = priority
+	heap.Fix(pq, item.Index)
+}
+
+func (pq *PriorityQueue[T]) UpdateGreaterItemPriority(value T, priority int) {
+	item, ok := pq.items[value]
+	if !ok {
+		return
+	}
+	if item.Priority < priority {
+		return
+	}
+	item.Priority = priority
+	heap.Fix(pq, item.Index)
+}
+
 // PushItem adds an item to the priority queue.
 func (pq *PriorityQueue[T]) PushItem(value T, priority int) {
 	item := &Item[T]{Value: value, Priority: priority}
 	heap.Push(pq, item)
+	pq.items[value] = item
 }
 
 // PopItem removes and returns the highest-priority item from the queue.

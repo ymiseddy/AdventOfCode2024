@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func MaybeShowGrid(grid [][]rune, debug bool) {
@@ -66,4 +67,37 @@ func ReadIntsFromStream(file *os.File) ([][]int64, error) {
 		lines = append(lines, ints)
 	}
 	return lines, nil
+}
+
+func Clear() {
+	fmt.Print("\033[H\033[2J")
+}
+
+type Coord struct {
+	X int
+	Y int
+}
+
+func ShowGridStep(grid [][]rune, debug bool, positions []Coord, sleepTime int) {
+	if !debug {
+		return
+	}
+	positionMap := make(map[Coord]struct{})
+	for _, pos := range positions {
+		positionMap[pos] = struct{}{}
+	}
+	Clear()
+	for y := 0; y < len(grid); y++ {
+		for x := 0; x < len(grid[y]); x++ {
+			if _, ok := positionMap[Coord{x, y}]; ok {
+				fmt.Printf("@")
+				continue
+			}
+			fmt.Printf("%c", grid[y][x])
+		}
+		fmt.Println()
+	}
+	if sleepTime > 0 {
+		time.Sleep(time.Millisecond * time.Duration(sleepTime))
+	}
 }

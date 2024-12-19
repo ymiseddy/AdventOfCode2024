@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/ymiseddy/AdventOfCode2024/priorityqueue"
+	"math"
 	"os"
 	"strconv"
 	"strings"
-	"time"
+
+	"github.com/ymiseddy/AdventOfCode2024/priorityqueue"
 
 	"github.com/ymiseddy/AdventOfCode2024/shared"
 )
@@ -76,25 +77,6 @@ func Clear() {
 
 var debug = false
 
-func ShowGridStep(grid [][]rune, pos coord) {
-	if !debug {
-		return
-	}
-	Clear()
-	for y := 0; y < len(grid); y++ {
-		for x := 0; x < len(grid[y]); x++ {
-			if pos.x == x && pos.y == y {
-				fmt.Printf("@")
-				continue
-			}
-			fmt.Printf("%c", grid[y][x])
-		}
-		fmt.Println()
-	}
-	fmt.Println(pos)
-	time.Sleep(time.Millisecond * 250)
-}
-
 var mapWidth = 70
 var mapHeight = 70
 var simSteps = 1024
@@ -152,7 +134,9 @@ func absInt(x int) int {
 
 func cost(position coord, step int, exit coord) int {
 	// Manhattan distance
-	distance := absInt(position.x-exit.x) + absInt(position.y-exit.y)
+	//distance := absInt(position.x-exit.x) + absInt(position.y-exit.y)
+	euclideanDistance := math.Sqrt(float64(position.x-exit.x)*float64(position.x-exit.x) + float64(position.y-exit.y)*float64(position.y-exit.y))
+	distance := int(euclideanDistance)
 	return step + distance
 }
 
@@ -171,7 +155,15 @@ func AStarPath(grid [][]rune) []coord {
 	for queue.Len() > 0 {
 		position := queue.PopItem()
 		step := stepMap[position]
-		ShowGridStep(grid, position)
+
+		// Uncomment to see cool animation of AStar
+		/*
+			visitedPositions := make([]shared.Coord, 0, 1024)
+			for coord, _ := range visited {
+				visitedPositions = append(visitedPositions, shared.Coord{X: coord.x, Y: coord.y})
+			}
+			shared.ShowGridStep(grid, debug, visitedPositions, 50)
+		*/
 		adjacentPositions := adjacentPath(position, grid)
 		for _, adjacentPosition := range adjacentPositions {
 			if adjacentPosition.x == len(grid[0])-1 && adjacentPosition.y == len(grid)-1 {
@@ -211,8 +203,6 @@ func BFSPath(grid [][]rune) []coord {
 
 	for len(queue) > 0 {
 		position = queue[0]
-		//fmt.Printf("Position: %v\n", position)
-		ShowGridStep(grid, position)
 		queue = queue[1:]
 		adjacentPositions := adjacentPath(position, grid)
 		for _, adjacentPosition := range adjacentPositions {

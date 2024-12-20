@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"sort"
 
 	"github.com/ymiseddy/AdventOfCode2024/shared"
 )
@@ -30,6 +29,7 @@ func ParseInput(lines []string) (shared.Coord, shared.Coord, [][]rune) {
 	return start, end, grid
 }
 
+// This is waay overkill for this problem - themaze doesn't branch.
 func LeastCostPath(start shared.Coord, end shared.Coord, grid [][]rune, debug bool) []shared.Coord {
 	var total int = 0
 	visited := make(map[shared.Coord]struct{})
@@ -124,7 +124,7 @@ func Puzzle1(lines []string) int {
 		lcpDistance[p] = n
 		reversedPath = append(reversedPath, p)
 	}
-	total = FindCheats(reversedPath, grid, lcpDistance, false)
+	total = FindCheats2(reversedPath, grid, lcpDistance, 2)
 	return total
 }
 
@@ -155,25 +155,27 @@ func FindCheats2(path []shared.Coord, grid [][]rune, distances map[shared.Coord]
 		}
 	}
 
-	// Just so we can print this out to compare with samples.
-	distancesSavedCount := map[int]int{}
-	distancesSavedList := []int{}
-	for _, v := range cheatMap {
-		distance := v
-		if _, ok := distancesSavedCount[distance]; !ok {
-			distancesSavedList = append(distancesSavedList, distance)
-			distancesSavedCount[distance] = 1
-		} else {
-			distancesSavedCount[distance]++
+	/*
+		// Just so we can print this out to compare with samples.
+		distancesSavedCount := map[int]int{}
+		distancesSavedList := []int{}
+		for _, v := range cheatMap {
+			distance := v
+			if _, ok := distancesSavedCount[distance]; !ok {
+				distancesSavedList = append(distancesSavedList, distance)
+				distancesSavedCount[distance] = 1
+			} else {
+				distancesSavedCount[distance]++
+			}
 		}
-	}
 
-	// Sort distancesSavedList
-	sort.Ints(distancesSavedList)
+		// Sort distancesSavedList
+		sort.Ints(distancesSavedList)
 
-	for _, s := range distancesSavedList {
-		fmt.Printf("Cheat %d: %d\n", s, distancesSavedCount[s])
-	}
+		for _, s := range distancesSavedList {
+			fmt.Printf("Cheat %d: %d\n", s, distancesSavedCount[s])
+		}
+	*/
 
 	return len(cheatMap)
 }

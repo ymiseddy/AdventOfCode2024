@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 
@@ -28,7 +29,7 @@ func Puzzle1(lines []string) int {
 	data := ParseInput(lines)
 
 	for _, line := range data {
-		pathLength := FindRouteLength(line, 'A', 3)
+		pathLength := FindBestRouteLength(line, 'A', 3)
 		intLine, _ := strconv.Atoi(string(line[0 : len(line)-1]))
 		total += intLine * pathLength
 		fmt.Printf("Int line: %d * length: %d\n", intLine, pathLength)
@@ -38,9 +39,10 @@ func Puzzle1(lines []string) int {
 }
 
 type memoKey struct {
-	characters string
-	start      rune
-	depth      int
+	characters     string
+	start          rune
+	depth          int
+	prefHorizontal bool
 }
 
 var routeMemo = map[memoKey][]rune{}
@@ -84,9 +86,9 @@ var directionKeyToDirection = map[rune]shared.Coord{
 	'<': {X: -1, Y: 0},
 }
 
-func GetPath(start rune, end rune, prefHorizontal bool) []rune {
+func GetPaths(start rune, end rune) [][]rune {
 	if start == end {
-		return []rune{'A'}
+		return [][]rune{{'A'}}
 	}
 	_, isStartDirectional := directionKeyToDirection[start]
 	_, isEndDirectional := directionKeyToDirection[end]
@@ -99,15 +101,16 @@ func GetPath(start rune, end rune, prefHorizontal bool) []rune {
 		padGrid = directionPad
 	}
 
+	// Sanity check that the space coordinate is valid.
 	spaceCoord := coordinateMap[' ']
 	if padGrid[spaceCoord.Y][spaceCoord.X] != ' ' {
 		panic("Space is not valid")
 	}
 
-	startCoord := coordinateMap[start]
+	currentCoord := coordinateMap[start]
 	endCoord := coordinateMap[end]
-	deltaX := endCoord.X - startCoord.X
-	deltaY := endCoord.Y - startCoord.Y
+	deltaX := endCoord.X - currentCoord.X
+	deltaY := endCoord.Y - currentCoord.Y
 	moveX := shared.Abs(deltaX)
 	moveY := shared.Abs(deltaY)
 
@@ -120,17 +123,22 @@ func GetPath(start rune, end rune, prefHorizontal bool) []rune {
 	if deltaY < 0 {
 		yChar = '^'
 	}
-	sequence := []rune{}
 
-	if startCoord.Y == spaceCoord.Y && endCoord.X == spaceCoord.X {
+	sequences := [][]rune{}
+
+	if currentCoord.Y == spaceCoord.Y && endCoord.X == spaceCoord.X {
 		// Can't move horizontally first.
+		sequence := []rune{}
 		for i := 0; i < moveY; i++ {
 			sequence = append(sequence, yChar)
 		}
 		for i := 0; i < moveX; i++ {
 			sequence = append(sequence, xChar)
 		}
-	} else if startCoord.X == spaceCoord.X && endCoord.Y == spaceCoord.Y {
+		sequence = append(sequence, 'A')
+		sequences = append(sequences, sequence)
+	} else if currentCoord.X == spaceCoord.X && endCoord.Y == spaceCoord.Y {
+		sequence := []rune{}
 		// Can't move vertically first.
 		for i := 0; i < moveX; i++ {
 			sequence = append(sequence, xChar)
@@ -138,45 +146,44 @@ func GetPath(start rune, end rune, prefHorizontal bool) []rune {
 		for i := 0; i < moveY; i++ {
 			sequence = append(sequence, yChar)
 		}
+		sequence = append(sequence, 'A')
+		sequences = append(sequences, sequence)
 	} else {
-		if prefHorizontal {
-			for i := 0; i < moveX; i++ {
-				sequence = append(sequence, xChar)
-			}
-			for i := 0; i < moveY; i++ {
-				sequence = append(sequence, yChar)
-			}
-		} else {
-			for i := 0; i < moveY; i++ {
-				sequence = append(sequence, yChar)
-			}
-			for i := 0; i < moveX; i++ {
-				sequence = append(sequence, xChar)
-			}
+		sequence := []rune{}
+		for i := 0; i < moveX; i++ {
+			sequence = append(sequence, xChar)
 		}
+		for i := 0; i < moveY; i++ {
+			sequence = append(sequence, yChar)
+		}
+		sequence = append(sequence, 'A')
+		sequences = append(sequences, sequence)
+
+		sequence = []rune{}
+		for i := 0; i < moveY; i++ {
+			sequence = append(sequence, yChar)
+		}
+		for i := 0; i < moveX; i++ {
+			sequence = append(sequence, xChar)
+		}
+		sequence = append(sequence, 'A')
+		sequences = append(sequences, sequence)
 	}
 
-	startCoord = coordinateMap[start]
-	for _, x := range sequence {
-		dirCoord := directionKeyToDirection[x]
-		dx, dy := dirCoord.X+startCoord.X, dirCoord.Y+startCoord.Y
-		startCoord = shared.Coord{X: dx, Y: dy}
-		if dx == spaceCoord.X && dy == spaceCoord.Y {
-			fmt.Printf("Start: %s End: %s dx:%d dy:%d: %s\n", string(start), string(end), dx, dy, string(sequence))
-			panic("Direction is not valid")
-		}
-	}
-
-	sequence = append(sequence, 'A')
-	// fmt.Printf("GetPath: %s -> %s dx:%d dy:%d: %s\n", string(start), string(end), deltaX, deltaY, string(sequence))
-	return sequence
+	currentCoord = coordinateMap[start]
+	return sequences
 }
 
-var routeLengthMemo = map[memoKey]int{}
+var routeLengthMemo = map[routeLengthMemoKey]int{}
 
-func FindRouteLength(characters []rune, start rune, depth int) int {
-	//fmt.Printf("FindRouteLength depth %d: %s\n", depth, string(characters))
-	key := memoKey{string(characters), start, depth}
+type routeLengthMemoKey struct {
+	characters string
+	start      rune
+	depth      int
+}
+
+func FindBestRouteLength(characters []rune, start rune, depth int) int {
+	key := routeLengthMemoKey{string(characters), start, depth}
 	if val, ok := routeLengthMemo[key]; ok {
 		return val
 	}
@@ -188,28 +195,26 @@ func FindRouteLength(characters []rune, start rune, depth int) int {
 	}
 
 	for _, char := range characters {
-		var seq []rune
-		var seq2 []rune
+		var seq [][]rune
 		if current == char {
-			seq = []rune{'A'}
-			seq2 = nil
+			seq = [][]rune{{'A'}}
 		} else {
-			seq = GetPath(current, char, true)
-			seq2 = GetPath(current, char, false)
-			if string(seq) == string(seq2) {
-				seq2 = nil
+			seq = GetPaths(current, char)
+		}
+
+		// Max int
+		minLength := math.MaxInt64
+		chosenSeq := []rune{}
+		for _, seq := range seq {
+			length := FindBestRouteLength(seq, 'A', depth-1)
+			if length < minLength {
+				minLength = length
+				chosenSeq = seq
 			}
 		}
-		length := FindRouteLength([]rune(seq), 'A', depth-1)
-		if seq2 != nil {
-			length2 := FindRouteLength([]rune(seq2), 'A', depth-1)
-			if length2 < length {
-				length = length2
-			}
-		}
-		newKey := memoKey{string(seq), start, depth - 1}
-		routeLengthMemo[newKey] = length
-		count += length
+		newKey := routeLengthMemoKey{string(chosenSeq), start, depth - 1}
+		routeLengthMemo[newKey] = minLength
+		count += minLength
 		current = char
 	}
 	return count
@@ -219,8 +224,7 @@ func Puzzle2(lines []string) int {
 	total := 0
 	data := ParseInput(lines)
 	for _, line := range data {
-		pathLength := FindRouteLength(line, 'A', 3)
-
+		pathLength := FindBestRouteLength(line, 'A', 26)
 		intLine, _ := strconv.Atoi(string(line[0 : len(line)-1]))
 		fmt.Printf("Int line: %d * length: %d\n", intLine, pathLength)
 		//fmt.Printf("Int line: %d * length: %d\n", intLine, pathLength)
@@ -231,10 +235,9 @@ func Puzzle2(lines []string) int {
 
 func main() {
 	buildCoordMap()
-	fmt.Println(title)
-	// Read all text from stdin
-
 	lines := shared.ReadLinesFromStream(os.Stdin)
+	// Read all text from stdin
+	fmt.Println(title)
 
 	res1 := Puzzle1(lines)
 	fmt.Println("Puzzle 1 result: ", res1)

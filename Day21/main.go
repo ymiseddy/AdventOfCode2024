@@ -23,146 +23,12 @@ type runePair struct {
 	b rune
 }
 
-var shortestPaths = map[runePair]string{
-	{'0', '1'}: "^<A",
-	{'0', '2'}: "^A",
-	{'0', '3'}: "^>A",
-	{'0', '4'}: "^<^A",
-	{'0', '5'}: "^^A",
-	{'0', '6'}: "^^>A",
-	{'0', '7'}: "^^^<A",
-	{'0', '8'}: "^^^A",
-	{'0', '9'}: "^^^>A",
-	{'0', 'A'}: ">A",
-	{'1', '0'}: ">VA",
-	{'1', '2'}: ">A",
-	{'1', '3'}: ">>A",
-	{'1', '4'}: "^A",
-	{'1', '5'}: "^>A",
-	{'1', '6'}: "^>>A",
-	{'1', '7'}: "^^A",
-	{'1', '8'}: "^^>A",
-	{'1', '9'}: "^^>>A",
-	{'1', 'A'}: ">>VA",
-	{'2', '0'}: "VA",
-	{'2', '1'}: "<A",
-	{'2', '3'}: ">A",
-	{'2', '4'}: "<^A",
-	{'2', '5'}: "^A",
-	{'2', '6'}: "^>A",
-	{'2', '7'}: "<^^A",
-	{'2', '8'}: "^^A",
-	{'2', '9'}: "^^>A",
-	{'2', 'A'}: "V>A",
-	{'3', '0'}: "<VA",
-	{'3', '1'}: "<<A",
-	{'3', '2'}: "<A",
-	{'3', '4'}: "<<^A",
-	{'3', '5'}: "<^A",
-	{'3', '6'}: "^A",
-	{'3', '7'}: "<<^^A",
-	{'3', '8'}: "<^^A",
-	{'3', '9'}: "^^A",
-	{'3', 'A'}: "VA",
-	{'4', '0'}: ">VVA",
-	{'4', '1'}: "VA",
-	{'4', '2'}: "V>A",
-	{'4', '3'}: "V>>A",
-	{'4', '5'}: ">A",
-	{'4', '6'}: ">>A",
-	{'4', '7'}: "^A",
-	{'4', '8'}: "^>A",
-	{'4', '9'}: "^>>A",
-	{'4', 'A'}: ">>VVA",
-	{'5', '0'}: "VVA",
-	{'5', '1'}: "<VA",
-	{'5', '2'}: "VA",
-	{'5', '3'}: "V>A",
-	{'5', '4'}: "<A",
-	{'5', '6'}: ">A",
-	{'5', '7'}: "<^A",
-	{'5', '8'}: "^A",
-	{'5', '9'}: "^>A",
-	{'5', 'A'}: "VV>A",
-	{'6', '0'}: "<VVA",
-	{'6', '1'}: "<<VA",
-	{'6', '2'}: "<VA",
-	{'6', '3'}: "VA",
-	{'6', '4'}: "<<A",
-	{'6', '5'}: "<A",
-	{'6', '7'}: "<<^A",
-	{'6', '8'}: "<^A",
-	{'6', '9'}: "^A",
-	{'6', 'A'}: "VVA",
-	{'7', '0'}: ">VVVA",
-	{'7', '1'}: "VVA",
-	{'7', '2'}: "VV>A",
-	{'7', '3'}: "VV>>A",
-	{'7', '4'}: "VA",
-	{'7', '5'}: "V>A",
-	{'7', '6'}: "V>>A",
-	{'7', '8'}: ">A",
-	{'7', '9'}: ">>A",
-	{'7', 'A'}: ">>VVVA",
-	{'8', '0'}: "VVVA",
-	{'8', '1'}: "<VVA",
-	{'8', '2'}: "VVA",
-	{'8', '3'}: "VV>A",
-	{'8', '4'}: "<VA",
-	{'8', '5'}: "VA",
-	{'8', '6'}: "V>A",
-	{'8', '7'}: "<A",
-	{'8', '9'}: ">A",
-	{'8', 'A'}: "VVV>A",
-	{'9', '0'}: "<VVVA",
-	{'9', '1'}: "<<VVA",
-	{'9', '2'}: "<VVA",
-	{'9', '3'}: "VVA",
-	{'9', '4'}: "<<VA",
-	{'9', '5'}: "<VA",
-	{'9', '6'}: "VA",
-	{'9', '7'}: "<<A",
-	{'9', '8'}: "<A",
-	{'9', 'A'}: "VVVA",
-	{'<', '>'}: ">>A",
-	{'<', 'A'}: ">>^A",
-	{'<', 'V'}: ">A",
-	{'<', '^'}: ">^A",
-	{'>', '<'}: "<<A",
-	{'>', 'A'}: "^A",
-	{'>', 'V'}: "<A",
-	{'>', '^'}: "<^A",
-	{'A', '0'}: "<A",
-	{'A', '1'}: "^<<A",
-	{'A', '2'}: "<^A",
-	{'A', '3'}: "^A",
-	{'A', '4'}: "^^<<A",
-	{'A', '5'}: "<^^A",
-	{'A', '6'}: "^^A",
-	{'A', '7'}: "^^^<<A",
-	{'A', '8'}: "<^^^A",
-	{'A', '9'}: "^^^A",
-	{'A', '<'}: "V<<A",
-	{'A', '>'}: "VA",
-	{'A', 'V'}: "<VA",
-	{'A', '^'}: "<A",
-	{'V', '<'}: "<A",
-	{'V', '>'}: ">A",
-	{'V', 'A'}: "^>A",
-	{'V', '^'}: "^A",
-	{'^', '<'}: "V<A",
-	{'^', '>'}: "V>A",
-	{'^', 'A'}: ">A",
-	{'^', 'V'}: "VA",
-}
-
 func Puzzle1(lines []string) int {
 	total := 0
 	data := ParseInput(lines)
 
 	for _, line := range data {
-		path := FindRoute2(line, 'A', 3)
-		pathLength := len(path)
+		pathLength := FindRouteLength(line, 'A', 3)
 		intLine, _ := strconv.Atoi(string(line[0 : len(line)-1]))
 		total += intLine * pathLength
 		fmt.Printf("Int line: %d * length: %d\n", intLine, pathLength)
@@ -179,43 +45,142 @@ type memoKey struct {
 
 var routeMemo = map[memoKey][]rune{}
 
-func FindRoute2(characters []rune, start rune, depth int) []rune {
-	key := memoKey{string(characters), start, depth}
-	if val, ok := routeMemo[key]; ok {
-		return val
+var numericPad = [][]rune{
+	{'7', '8', '9'},
+	{'4', '5', '6'},
+	{'1', '2', '3'},
+	{' ', '0', 'A'},
+}
+
+var directionPad = [][]rune{
+	{' ', '^', 'A'},
+	{'<', 'V', '>'},
+}
+
+var directionKeys = []rune{
+	'^', 'V', '<', '>',
+}
+
+var numericRuneToCoord = map[rune]shared.Coord{}
+var directionalRuneToCoord = map[rune]shared.Coord{}
+
+func buildCoordMap() {
+	for y, row := range numericPad {
+		for x, cell := range row {
+			numericRuneToCoord[cell] = shared.Coord{X: x, Y: y}
+		}
 	}
-	//fmt.Printf("FindRoute2: %s\n", string(characters))
-	sequence := []rune{}
-	current := start
-	if depth == 0 {
-		return characters
+	for y, row := range directionPad {
+		for x, cell := range row {
+			directionalRuneToCoord[cell] = shared.Coord{X: x, Y: y}
+		}
+	}
+}
+
+var directionKeyToDirection = map[rune]shared.Coord{
+	'^': {X: 0, Y: -1},
+	'>': {X: 1, Y: 0},
+	'V': {X: 0, Y: 1},
+	'<': {X: -1, Y: 0},
+}
+
+func GetPath(start rune, end rune, prefHorizontal bool) []rune {
+	if start == end {
+		return []rune{'A'}
+	}
+	_, isStartDirectional := directionKeyToDirection[start]
+	_, isEndDirectional := directionKeyToDirection[end]
+
+	// Figure out which pad to use
+	coordinateMap := numericRuneToCoord
+	padGrid := numericPad
+	if isStartDirectional || isEndDirectional {
+		coordinateMap = directionalRuneToCoord
+		padGrid = directionPad
 	}
 
-	for _, char := range characters {
-		if char == current {
-			sequence = append(sequence, 'A')
-			current = char
-			continue
-		}
-		x := shortestPaths[runePair{current, char}]
-		sequence = append(sequence, []rune(x)...)
-		current = char
+	spaceCoord := coordinateMap[' ']
+	if padGrid[spaceCoord.Y][spaceCoord.X] != ' ' {
+		panic("Space is not valid")
 	}
-	route := FindRoute2(sequence, 'A', depth-1)
-	newKey := memoKey{string(route), start, depth - 1}
-	routeMemo[newKey] = route
-	return route
+
+	startCoord := coordinateMap[start]
+	endCoord := coordinateMap[end]
+	deltaX := endCoord.X - startCoord.X
+	deltaY := endCoord.Y - startCoord.Y
+	moveX := shared.Abs(deltaX)
+	moveY := shared.Abs(deltaY)
+
+	xChar := '>'
+	if deltaX < 0 {
+		xChar = '<'
+	}
+
+	yChar := 'V'
+	if deltaY < 0 {
+		yChar = '^'
+	}
+	sequence := []rune{}
+
+	if startCoord.Y == spaceCoord.Y && endCoord.X == spaceCoord.X {
+		// Can't move horizontally first.
+		for i := 0; i < moveY; i++ {
+			sequence = append(sequence, yChar)
+		}
+		for i := 0; i < moveX; i++ {
+			sequence = append(sequence, xChar)
+		}
+	} else if startCoord.X == spaceCoord.X && endCoord.Y == spaceCoord.Y {
+		// Can't move vertically first.
+		for i := 0; i < moveX; i++ {
+			sequence = append(sequence, xChar)
+		}
+		for i := 0; i < moveY; i++ {
+			sequence = append(sequence, yChar)
+		}
+	} else {
+		if prefHorizontal {
+			for i := 0; i < moveX; i++ {
+				sequence = append(sequence, xChar)
+			}
+			for i := 0; i < moveY; i++ {
+				sequence = append(sequence, yChar)
+			}
+		} else {
+			for i := 0; i < moveY; i++ {
+				sequence = append(sequence, yChar)
+			}
+			for i := 0; i < moveX; i++ {
+				sequence = append(sequence, xChar)
+			}
+		}
+	}
+
+	startCoord = coordinateMap[start]
+	for _, x := range sequence {
+		dirCoord := directionKeyToDirection[x]
+		dx, dy := dirCoord.X+startCoord.X, dirCoord.Y+startCoord.Y
+		startCoord = shared.Coord{X: dx, Y: dy}
+		if dx == spaceCoord.X && dy == spaceCoord.Y {
+			fmt.Printf("Start: %s End: %s dx:%d dy:%d: %s\n", string(start), string(end), dx, dy, string(sequence))
+			panic("Direction is not valid")
+		}
+	}
+
+	sequence = append(sequence, 'A')
+	// fmt.Printf("GetPath: %s -> %s dx:%d dy:%d: %s\n", string(start), string(end), deltaX, deltaY, string(sequence))
+	return sequence
 }
 
 var routeLengthMemo = map[memoKey]int{}
 
 func FindRouteLength(characters []rune, start rune, depth int) int {
-	fmt.Printf("FindRouteLength depth %d: %s\n", depth, string(characters))
+	//fmt.Printf("FindRouteLength depth %d: %s\n", depth, string(characters))
 	key := memoKey{string(characters), start, depth}
 	if val, ok := routeLengthMemo[key]; ok {
 		return val
 	}
-	fmt.Printf("Depth: %d\n", depth)
+	// fmt.Printf("Depth: %d\n", depth)
 	count := 0
 	current := start
 	if depth == 0 {
@@ -223,13 +188,25 @@ func FindRouteLength(characters []rune, start rune, depth int) int {
 	}
 
 	for _, char := range characters {
-		var seq string
+		var seq []rune
+		var seq2 []rune
 		if current == char {
-			seq = "A"
+			seq = []rune{'A'}
+			seq2 = nil
 		} else {
-			seq = shortestPaths[runePair{current, char}]
+			seq = GetPath(current, char, true)
+			seq2 = GetPath(current, char, false)
+			if string(seq) == string(seq2) {
+				seq2 = nil
+			}
 		}
 		length := FindRouteLength([]rune(seq), 'A', depth-1)
+		if seq2 != nil {
+			length2 := FindRouteLength([]rune(seq2), 'A', depth-1)
+			if length2 < length {
+				length = length2
+			}
+		}
 		newKey := memoKey{string(seq), start, depth - 1}
 		routeLengthMemo[newKey] = length
 		count += length
@@ -242,9 +219,7 @@ func Puzzle2(lines []string) int {
 	total := 0
 	data := ParseInput(lines)
 	for _, line := range data {
-		pathLength := FindRouteLength(line, 'A', 26)
-		//pathLength := len(path)
-		//fmt.Printf("Path: %s\n", string(path))
+		pathLength := FindRouteLength(line, 'A', 3)
 
 		intLine, _ := strconv.Atoi(string(line[0 : len(line)-1]))
 		fmt.Printf("Int line: %d * length: %d\n", intLine, pathLength)
@@ -255,6 +230,7 @@ func Puzzle2(lines []string) int {
 }
 
 func main() {
+	buildCoordMap()
 	fmt.Println(title)
 	// Read all text from stdin
 

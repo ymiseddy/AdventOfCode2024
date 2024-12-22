@@ -82,38 +82,6 @@ func LeastCostPath(start shared.Coord, end shared.Coord, grid [][]rune, debug bo
 	return nil
 }
 
-func FindCheats(path []shared.Coord, grid [][]rune, distances map[shared.Coord]int, debug bool) int {
-	// Wrong 2528
-	countCheats := 0
-	cheatMap := make(map[int]int)
-	for _, p := range path {
-		for dir, adjacent := range p.Adjacencies() {
-			if adjacent.X < 0 || adjacent.Y < 0 || adjacent.X >= len(grid) || adjacent.Y >= len(grid[0]) {
-				continue
-			}
-			if grid[adjacent.Y][adjacent.X] == '#' {
-				// Check to see if the path is on the other side of the wall
-				next := adjacent.Move(dir)
-				ndist, ok := distances[next]
-				if !ok {
-					continue
-				}
-				delta := (ndist - (distances[p] + 2))
-				if delta >= 100 {
-					if _, ok := cheatMap[delta]; !ok {
-						cheatMap[delta] = 1
-					} else {
-						cheatMap[delta]++
-					}
-					countCheats++
-				}
-
-			}
-		}
-	}
-	return countCheats
-}
-
 func Puzzle1(lines []string) int {
 	total := 0
 	start, end, grid := ParseInput(lines)
@@ -124,7 +92,7 @@ func Puzzle1(lines []string) int {
 		lcpDistance[p] = n
 		reversedPath = append(reversedPath, p)
 	}
-	total = FindCheats2(reversedPath, grid, lcpDistance, 2)
+	total = FindCheats(reversedPath, grid, lcpDistance, 2)
 	return total
 }
 
@@ -133,7 +101,7 @@ type StartEnd struct {
 	End   shared.Coord
 }
 
-func FindCheats2(path []shared.Coord, grid [][]rune, distances map[shared.Coord]int, cheatCount int) int {
+func FindCheats(path []shared.Coord, grid [][]rune, distances map[shared.Coord]int, cheatCount int) int {
 
 	cheatMap := make(map[StartEnd]int)
 	for _, p := range path {
@@ -190,7 +158,7 @@ func Puzzle2(lines []string) int {
 		lcpDistance[p] = n
 		reversedPath = append(reversedPath, p)
 	}
-	total = FindCheats2(reversedPath, grid, lcpDistance, 20)
+	total = FindCheats(reversedPath, grid, lcpDistance, 20)
 	return total
 }
 

@@ -53,7 +53,6 @@ func Puzzle1(lines []string) int {
 		for i := 0; i < 2000; i++ {
 			a = GenerateNext(a)
 		}
-		fmt.Printf("%d: %d\n", line, a)
 		total += a
 	}
 	return total
@@ -74,10 +73,15 @@ func Puzzle2(lines []string) int {
 	data := ParseInput(lines)
 	monkeySequences := monkeySequenceMap{}
 	allSequences := sequenceSet{}
+	var sequenceSetBananas map[sequenceKey]int = map[sequenceKey]int{}
+
+	// Determine the best sequence
+	var bestCumulativeSequence sequenceKey
+	maxBananas := 0
 
 	for monkeyNumber, line := range data {
 		a := line
-		currentSequence := []int{}
+		currentSequence := make([]int, 0, 5)
 		currentBananas := a % 10
 		monkeySequences[monkeyNumber] = make(sequenceMap)
 		for i := 0; i < 2000; i++ {
@@ -98,39 +102,23 @@ func Puzzle2(lines []string) int {
 			sequenceKey := sequenceKey{currentSequence[0], currentSequence[1], currentSequence[2], currentSequence[3]}
 			if _, ok := monkeySequences[monkeyNumber][sequenceKey]; !ok {
 				monkeySequences[monkeyNumber][sequenceKey] = currentBananas
+				if _, ok := sequenceSetBananas[sequenceKey]; !ok {
+					sequenceSetBananas[sequenceKey] = 0
+				}
+				sequenceSetBananas[sequenceKey] += currentBananas
+				if sequenceSetBananas[sequenceKey] > maxBananas {
+					maxBananas = sequenceSetBananas[sequenceKey]
+					bestCumulativeSequence = sequenceKey
+				}
 				allSequences[sequenceKey] = struct{}{}
 			}
-		}
-	}
-	// Determine the best sequence
-	var bestCumulativeSequence sequenceKey
-	maxBananas := 0
-	for initialSequence, _ := range allSequences {
-		countBananas := 0
-		for _, monkeySequence := range monkeySequences {
-			val, ok := monkeySequence[initialSequence]
-			if ok {
-				countBananas += val
-			}
-		}
-		if countBananas > maxBananas {
-			maxBananas = countBananas
-			bestCumulativeSequence = initialSequence
 		}
 	}
 
 	fmt.Printf("Best Cumulative Sequence: %v\n", bestCumulativeSequence)
 	fmt.Printf("Best Cumulative Bananas: %d\n", maxBananas)
-	/*
-		for n, seq := range monkeySequences {
-			fmt.Printf("Monkey number %d paying: %d\n", n, seq[bestCumulativeSequence])
-		}
-	*/
 
 	total = maxBananas
-	return total
-	//data := ParseInput(lines)
-	//fmt.Println(data)
 	return total
 }
 
@@ -140,8 +128,8 @@ func main() {
 
 	lines := shared.ReadLinesFromStream(os.Stdin)
 
-	//res1 := Puzzle1(lines)
-	//fmt.Println("Puzzle 1 result: ", res1)
+	res1 := Puzzle1(lines)
+	fmt.Println("Puzzle 1 result: ", res1)
 	res2 := Puzzle2(lines)
 	fmt.Println("Puzzle 2 result: ", res2)
 }

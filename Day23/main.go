@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ymiseddy/AdventOfCode2024/set"
 	"github.com/ymiseddy/AdventOfCode2024/shared"
 )
 
@@ -33,7 +34,7 @@ func ParseInput(lines []string) ([][]string, map[string]int) {
 	return output, endpointSet
 }
 
-func FindNConnection(source string, connectionMap map[string][]string, track []string, n int) [][]string {
+func FindCliqueSizedN(source string, connectionMap map[string][]string, track []string, n int) [][]string {
 
 	var findSubResult func(track []string, n int) [][]string
 	findSubResult = func(track []string, n int) [][]string {
@@ -69,8 +70,8 @@ func Puzzle1(lines []string) int {
 
 	allConnections := [][]string{}
 	connectionSet := map[string]struct{}{}
-	for connectionName, _ := range connectionsMap {
-		threeConnections := FindNConnection(connectionName, connectionMap, []string{}, 3)
+	for connectionName := range connectionsMap {
+		threeConnections := FindCliqueSizedN(connectionName, connectionMap, []string{}, 3)
 		for _, threeConnection := range threeConnections {
 			slices.Sort(threeConnection)
 			setName := strings.Join(threeConnection, "-")
@@ -109,7 +110,7 @@ func buildConnectionMap(connections [][]string) map[string][]string {
 	return connectionMap
 }
 
-func FindLargestInterconnection(connectionMap map[string][]string, unitSet map[string]int) []string {
+func FindLargestClique(connectionMap map[string][]string, unitSet map[string]int) []string {
 	var findConnection func(track []string, connections int) []string
 
 	memoized := map[string][]string{}
@@ -127,19 +128,14 @@ func FindLargestInterconnection(connectionMap map[string][]string, unitSet map[s
 				continue
 			}
 			for _, prevDest := range track {
-				if prevDest == dest {
-					panic("Already in track - how are we getting here?")
-				}
-			}
-			for _, prevDest := range track {
 				if !slices.Contains(connectionMap[dest], prevDest) {
 					continue outer
 				}
 			}
 			newTrack := slices.Clone(track)
 			newTrack = append(newTrack, dest)
-			// Check newtrack for duplicates
 			slices.Sort(newTrack)
+
 			newTrackName := strings.Join(newTrack, ",")
 			subResult := findConnection(newTrack, connections)
 			memoized[newTrackName] = subResult
@@ -186,9 +182,92 @@ func Puzzle2(lines []string) string {
 	password := ""
 	connections, unitSet := ParseInput(lines)
 	connectionMap := buildConnectionMap(connections)
-	largestInterconnection := FindLargestInterconnection(connectionMap, unitSet)
+	largestInterconnection := FindLargestClique(connectionMap, unitSet)
 	slices.Sort(largestInterconnection)
 	password = strings.Join(largestInterconnection, ",")
+	return password
+}
+
+func buildConnectionMapSets(connections [][]string) map[string]*set.Set[string] {
+	connectionMap := map[string]*set.Set[string]{}
+	for _, connection := range connections {
+		src, dest := connection[0], connection[1]
+		if _, ok := connectionMap[src]; !ok {
+			connectionMap[src] = set.NewSet[string]()
+		}
+		connectionMap[src].Add(dest)
+		if _, ok := connectionMap[dest]; !ok {
+			connectionMap[dest] = set.NewSet[string]()
+		}
+		connectionMap[dest].Add(src)
+	}
+	return connectionMap
+}
+
+func SetName(set *set.Set[string]) string {
+	slice := set.ToSlice()
+	slices.Sort(slice)
+	return strings.Join(slice, ",")
+}
+
+func FindLargestClique_sets(connectionMap map[string]*set.Set[string], unitSet map[string]int) *set.Set[string] {
+
+	var findConnection func(parents *set.Set[string], toExplore *set.Set[string]) *set.Set[string]
+	memoized := map[string]*set.Set[string]{}
+
+	findConnection = func(parents *set.Set[string], toExplore *set.Set[string]) *set.Set[string] {
+		name := SetName(parents)
+		if parents.Size() > 0 {
+			if val, ok := memoized[name]; ok {
+				return val
+			}
+		}
+		longestResult := parents
+		for v := range toExplore.All() {
+			if parents.Contains(v) {
+				continue
+			}
+			neighbors := connectionMap[v]
+			if parents.Size() > 0 {
+				if parents.Contains(v) {
+					continue
+				}
+				// All parents must be in neighbors.
+				if set.Intersection(parents, neighbors).Size() < parents.Size() {
+					continue
+				}
+			}
+			newParents := parents.With(v)
+			neighbors = set.Difference(neighbors, parents)
+			result := findConnection(newParents, neighbors)
+			/*
+				newName := SetName(newParents)
+				memoized[newName] = result
+			*/
+			if result.Size() > longestResult.Size() {
+				longestResult = result
+			}
+		}
+		memoized[name] = longestResult
+		return longestResult
+	}
+
+	units := set.NewSet[string]()
+	for unitName := range unitSet {
+		units.Add(unitName)
+	}
+
+	return findConnection(set.NewSet[string](), units)
+}
+
+func Puzzle2Sets(lines []string) string {
+	password := ""
+	connections, unitSet := ParseInput(lines)
+	connectionMap := buildConnectionMapSets(connections)
+	largestInterconnection := FindLargestClique_sets(connectionMap, unitSet)
+	intersectionKeys := largestInterconnection.ToSlice()
+	slices.Sort(intersectionKeys)
+	password = strings.Join(intersectionKeys, ",")
 	return password
 }
 
@@ -202,4 +281,6 @@ func main() {
 	fmt.Println("Puzzle 1 result: ", res1)
 	res2 := Puzzle2(lines)
 	fmt.Println("Puzzle 2 result: ", res2)
+	res3 := Puzzle2Sets(lines)
+	fmt.Println("Puzzle 2 sets: ", res3)
 }

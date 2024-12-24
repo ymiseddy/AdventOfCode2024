@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ymiseddy/AdventOfCode2024/set"
 	"github.com/ymiseddy/AdventOfCode2024/shared"
 )
 
@@ -163,99 +164,100 @@ func DoTrace(state string, outputMap map[string]*Operation) {
 }
 
 // right answer:  ckb,kbs,ksv,nbd,tqq,z06,z20,z39
-func backTrack(operations []*Operation) []string {
+func FindBadPairs(operations []*Operation) []string {
+	swappedSet := set.NewSet[string]()
 
-	errorSet := map[string]struct{}{}
+	var find func(string, string, string) *Operation
 
-	checkResult := map[string]struct{}{}
-
-	adds := map[string]int{}
-	xycarrys := map[string]int{}
-
-	for _, op := range operations {
-		if (op.LOperand[0] == 'x' || op.LOperand[0] == 'y') &&
-			(op.ROperand[0] == 'x' || op.ROperand[0] == 'y') {
-			idx, err := strconv.Atoi(op.LOperand[1:])
-			idx2, _ := strconv.Atoi(op.ROperand[1:])
-			if err != nil {
-				panic(err)
+	find = func(left, operand, right string) *Operation {
+		for _, op := range operations {
+			if op.LOperand == left && op.ROperand == right && op.Operation == operand {
+				return op
 			}
-
-			if idx != idx2 {
-				panic("Invalid result")
-			}
-
-			if op.Operation == OpXor {
-				adds[op.Result] = idx
-			} else if op.Operation == OpAnd {
-				xycarrys[op.Result] = idx
+			if op.LOperand == right && op.ROperand == left && op.Operation == operand {
+				return op
 			}
 		}
+		return nil
 	}
 
-	for _, op := range operations {
-		if op.Result[0] == 'z' {
-			if op.Operation != OpXor && op.Result != "z45" {
-				errorSet[op.Result] = struct{}{}
+	carryIn := ""
+	carryOut := ""
+	resultReg := ""
+	andsReg := ""
+	for n := 0; n < 45; n++ {
+		xname := fmt.Sprintf("x%02d", n)
+		yname := fmt.Sprintf("y%02d", n)
+
+		xorOp := find(xname, OpXor, yname)
+		andOp := find(xname, OpAnd, yname)
+
+		addn := xorOp.Result
+		andn := andOp.Result
+
+		if carryIn != "" {
+			andsOut := find(addn, OpAnd, carryIn)
+			if andsOut == nil {
+				// swap addn and andn
+				addn, andn = andn, addn
+				swappedSet.Add(addn)
+				swappedSet.Add(andn)
+				andsOut = find(addn, OpAnd, carryIn)
 			}
+			andsReg = andsOut.Result
+
+			resultOut := find(addn, OpXor, carryIn)
+			resultReg = resultOut.Result
+			if addn[0] == 'z' {
+				resultReg, addn = addn, resultReg
+				swappedSet.Add(addn)
+				swappedSet.Add(resultReg)
+			}
+
+			if andn[0] == 'z' {
+				resultReg, andn = andn, resultReg
+				swappedSet.Add(andn)
+				swappedSet.Add(resultReg)
+			}
+
+			if andsReg[0] == 'z' {
+				resultReg, andsReg = andsReg, resultReg
+				swappedSet.Add(andsReg)
+				swappedSet.Add(resultReg)
+			}
+
+			carryOut = find(andsReg, OpOr, andn).Result
 		}
-		if (op.LOperand[0] == 'x' || op.LOperand[0] == 'y') &&
-			(op.ROperand[0] == 'x' || op.ROperand[0] == 'y') {
-			if op.Result[0] == 'z' {
-				if op.Result == "z00" {
-					continue
-				}
-				errorSet[op.Result] = struct{}{}
-			}
-			checkResult[op.Result] = struct{}{}
-		} else if op.Operation == OpXor {
-			if op.Result[0] == 'z' {
-				continue
-			}
-			errorSet[op.Result] = struct{}{}
-		} else if op.Operation == OpOr {
-			_, lok := xycarrys[op.LOperand]
-			_, rok := xycarrys[op.ROperand]
-			if !lok && !rok {
-				errorSet[op.ROperand] = struct{}{}
-			}
+		if carryOut != "" && carryOut[0] == 'z' && n < 44 {
+			carryOut, resultReg = resultReg, carryOut
+			swappedSet.Add(carryOut)
+			swappedSet.Add(resultReg)
+		}
+
+		if carryIn != "" {
+			carryIn = carryOut
+		} else {
+			carryIn = andOp.Result
 		}
 
 	}
-	for _, op := range operations {
-		if op.Operation == OpXor && op.Result[0] != 'z' {
-			if (op.LOperand[0] == 'x' || op.LOperand[0] == 'y') &&
-				(op.ROperand[0] == 'x' || op.ROperand[0] == 'y') {
-				continue
-			}
-			left := op.LOperand
-			right := op.ROperand
-			_, okL := checkResult[left]
-			_, okR := checkResult[right]
-			if !okL || !okR {
-				errorSet[op.Result] = struct{}{}
-			}
-
-		}
-	}
-	result := []string{}
-	for k, _ := range errorSet {
-		result = append(result, k)
-	}
+	result := swappedSet.ToSlice()
 	slices.Sort(result)
 	return result
 }
 
 func Puzzle2(lines []string) string {
 	_, operations := ParseInput(lines)
-
-	outputMap := map[string]*Operation{}
-	for _, op := range operations {
-		outputMap[op.Result] = op
-	}
-	resultSet := backTrack(operations)
+	resultSet := FindBadPairs(operations)
 	name := strings.Join(resultSet, ",")
 	return name
+}
+
+func DumpToCsv(lines []string) {
+	_, operations := ParseInput(lines)
+	for _, op := range operations {
+		fmt.Printf("%s,%s,%s,%s\n", op.LOperand, op.Operation, op.ROperand, op.Result)
+	}
 }
 
 func main() {
